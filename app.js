@@ -18,18 +18,26 @@ app.post("/register", async (req, res) => {
 
     // Validate user input
     if (!(email && password && first_name && last_name)) {
-      res.status(400).send("All input is required");
+      return res.status(400).json({
+        status: "failure",
+        message: "All input is required",
+        data: null,
+      });
     }
 
-    // check if user already exist
-    // Validate if user exist in our database
+    // check if user already exists
+    // Validate if user exists in our database
     const oldUser = await User.findOne({ email });
 
     if (oldUser) {
-      return res.status(409).send("User Already Exist. Please Login");
+      return res.status(409).json({
+        status: "failure",
+        message: "User Already Exist. Please Login",
+        data: null,
+      });
     }
 
-    //Encrypt user password
+    // Encrypt user password
     const encryptedPassword = await bcrypt.hash(password, 10);
 
     // Create user in our database
@@ -48,11 +56,15 @@ app.post("/register", async (req, res) => {
         expiresIn: "2h",
       }
     );
-    // save user token
+    // Save user token
     user.token = token;
 
-    // return new user
-    res.status(201).json(user);
+    // Return new user
+    return res.status(201).json({
+      status: "success",
+      data: user,
+      message: "",
+    });
   } catch (err) {
     console.log(err);
   }
@@ -65,9 +77,13 @@ app.post("/login", async (req, res) => {
 
     // Validate user input
     if (!(email && password)) {
-      return res.status(400).send("All input is required");
+      return res.status(400).json({
+        status: "failure",
+        message: "All input is required",
+        data: null,
+      });
     }
-    // Validate if user exist in our database
+    // Validate if user exists in our database
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -80,32 +96,40 @@ app.post("/login", async (req, res) => {
         }
       );
 
-      // save user token
+      // Save user token
       user.token = token;
 
-      // user
-      return res.status(200).json(user);
+      // Return user
+      return res.status(200).json({
+        status: "success",
+        data: user,
+        token: token,
+        message: "",
+      });
     }
-    return res.status(400).send("Invalid Credentials");
+    return res.status(400).json({
+      status: "failed",
+      message: "Invalid Credentials",
+      data: null,
+    });
   } catch (err) {
     console.log(err);
   }
 });
 
-
 app.get("/welcome", auth, (req, res) => {
-  res.status(200).send("Welcome 🙌 ");
+  res.status(200).json({
+    status: "success",
+    data: null,
+    message: "Welcome 🙌",
+  });
 });
 
-// This should be the last route else any after it won't work
 app.use("*", (req, res) => {
   res.status(404).json({
-    success: "false",
+    status: "failure",
     message: "Page not found",
-    error: {
-      statusCode: 404,
-      message: "You reached a route that is not defined on this server",
-    },
+    data: null,
   });
 });
 
